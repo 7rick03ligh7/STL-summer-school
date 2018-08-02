@@ -101,7 +101,7 @@ def run_tsne(feat, targets, pca_dim=50, tsne_dim=2):
 
 if __name__ == "__main__":
     # dataset dir
-    base_dir = 'D:/AVER'
+    base_dir = 'C:/Users/Alexey/OneDrive - НИУ Высшая школа экономики/Summer School/task1-tsne'
     if 1:
         train_dataset_root = base_dir + '/Ryerson/Speech/Video'
         train_file_list = base_dir + '/Ryerson/Speech/train_data_with_landmarks.txt'
