@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-import sys, os
+import sys
+import os
 
-sys.path.append('../')
+sys.path.append(os.getcwd())
 from pytorch.common.datasets_parsers.av_parser import AVDBParser
 
 # matplotlib.use('Agg')
@@ -18,7 +19,6 @@ from data_visualization.t_sne.wrapper import Wrapper
 from pytorch.common.datasets_parsers.av_parser import AVDBParser
 
 
-
 def get_data(dataset_root, file_list, max_num_clips=0):
     dataset_parser = AVDBParser(dataset_root, os.path.join(dataset_root, file_list),
                                 max_num_clips=max_num_clips, ungroup=False, load_image=False)
@@ -26,6 +26,7 @@ def get_data(dataset_root, file_list, max_num_clips=0):
     print('clips count:', len(data))
     print('frames count:', dataset_parser.get_dataset_size())
     return data
+
 
 def calc_features(data, draw=False):
     feat, targets = [], []
@@ -39,22 +40,25 @@ def calc_features(data, draw=False):
             if i % 8 != 0:
                 continue
             dist = []
-            lm_ref = sample.landmarks[30] # point on the nose
+            lm_ref = sample.landmarks[30]  # point on the nose
             for j in range(len(sample.landmarks)):
                 lm = sample.landmarks[j]
-                dist.append(np.sqrt((lm_ref[0] - lm[0]) ** 2 + (lm_ref[1] - lm[1]) ** 2))
+                dist.append(
+                    np.sqrt((lm_ref[0] - lm[0]) ** 2 + (lm_ref[1] - lm[1]) ** 2))
             feat.append(dist)
             targets.append(sample.labels)
 
             if draw:
                 img = cv2.imread(sample.img_rel_path)
                 for lm in sample.landmarks:
-                    cv2.circle(img, (int(lm[0]), int(lm[1])), 3, (0, 0, 255), -1)
+                    cv2.circle(img, (int(lm[0]), int(
+                        lm[1])), 3, (0, 0, 255), -1)
                 cv2.imshow(sample.text_labels, img)
                 cv2.waitKey(100)
 
     print('feat count:', len(feat))
     return np.asarray(feat, dtype=np.float32), np.asarray(targets, dtype=np.float32)
+
 
 def draw(points2D, targets, sawe=False):
     fig = plt.figure()
@@ -67,6 +71,7 @@ def draw(points2D, targets, sawe=False):
         fig.show()
         plt.pause(5)
         plt.close(fig)
+
 
 def run_tsne(feat, targets, pca_dim=50, tsne_dim=2):
     if pca_dim > 0:
@@ -104,8 +109,10 @@ if __name__ == "__main__":
         train_dataset_root = base_dir + '/AFEW-VA/crop'
         train_file_list = base_dir + '/AFEW-VA/crop/train_data_with_landmarks.txt'
     elif 1:
-        train_dataset_root = base_dir + '/OMGEmotionChallenge-master/omg_TrainVideos/preproc/frames'
-        train_file_list = base_dir + '/OMGEmotionChallenge-master/omg_TrainVideos/preproc/train_data_with_landmarks.txt'
+        train_dataset_root = base_dir + \
+            '/OMGEmotionChallenge-master/omg_TrainVideos/preproc/frames'
+        train_file_list = base_dir + \
+            '/OMGEmotionChallenge-master/omg_TrainVideos/preproc/train_data_with_landmarks.txt'
 
     # load dataset
     data = get_data(train_dataset_root, train_file_list, max_num_clips=0)
