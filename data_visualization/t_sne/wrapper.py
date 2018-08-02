@@ -28,6 +28,7 @@ class Wrapper():
         if cuda:
             self.model.cuda()
         # TODO: добавьте оптимизатор
+        self.optimizer = optim.Adam()
 
     def fit(self, *args):
         self.model.train()
