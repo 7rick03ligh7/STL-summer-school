@@ -12,7 +12,6 @@ sys.path.append(os.getcwd())
 from pytorch.common.datasets_parsers.av_parser import AVDBParser
 
 from sklearn import svm
-from sklearn.linear_model import SGDClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.decomposition import PCA
@@ -20,6 +19,9 @@ from accuracy import Accuracy
 
 import scipy as sc
 from time import time
+from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import SGDClassifier
 
 
 def get_data(dataset_root, file_list, max_num_clips=0, max_num_samples=50):
@@ -46,13 +48,14 @@ def calc_features(data):
     for i in progresser:
         clip = data[i]
         for sample in clip.data_samples:
-            image = np.pad(sample.image, (padding * 2,),
-                           'constant', constant_value=0)
+            image = np.pad(sample.image, ((padding * 2, padding * 2), (padding * 2, padding * 2), (0, 0)),
+                           'constant', constant_values=0)
+            image = image.astype(dtype=np.uint8)
             kps = []
             for landmark in sample.landmarks:
                 kps.append(cv.KeyPoint(
                     landmark[0] + padding, landmark[1] + padding, radius))
-            kp, descr = orb.detect(image, kps)
+            kp, descr = orb.compute(image, kps)
 
             pwdist = sc.spatial.distance.pdist(np.asarray(sample.landmarks))
             feat.append(np.hstack((descr.ravel(), pwdist.ravel())))
@@ -61,6 +64,18 @@ def calc_features(data):
 
     print('feat count:', len(feat))
     return np.asarray(feat, dtype=np.float32), np.asarray(targets, dtype=np.float32)
+
+
+def report(results, n_top=5):
+    for i in range(1, n_top + 1):
+        candidates = np.flatnonzero(results['rank_test_score'] == i)
+        for candidate in candidates:
+            print("Model with rank: {0}".format(i))
+            print("Mean validation score: {0:.8f} (std: {1:.8f})".format(
+                  results['mean_test_score'][candidate],
+                  results['std_test_score'][candidate]))
+            print("Parameters: {0}".format(results['params'][candidate]))
+            print("")
 
 
 def classification(X_train, X_test, y_train, y_test, accuracy_fn, pca_dim):
@@ -73,9 +88,40 @@ def classification(X_train, X_test, y_train, y_test, accuracy_fn, pca_dim):
     random.shuffle(combined)
     X_train[:], y_train[:] = zip(*combined)
 
-    # TODO: используйте классификаторы из sklearn
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
 
-    y_pred = []
+    # # TODO: используйте классификаторы из sklearn
+    # sgd_clf = SGDClassifier(random_state=42, max_iter=5, loss='log', n_jobs=4)
+    # iterations = 1
+    # param_dist = {"penalty": ['l1', 'l2'],
+    #               "alpha": np.arange(0.0001, 0.01, (0.01 - 0.0001) / 50),
+    #               "l1_ratio": np.arange(0.05, 0.3, (0.3 - 0.05) / 10),
+    #               "class_weight": [None, 'balanced'],
+    #               "average": [False, True],
+    #               "fit_intercept": [False, True]
+    #               }
+
+    # search_seed = 42
+    # random_search = RandomizedSearchCV(sgd_clf, param_distributions=param_dist,
+    #                                    n_iter=iterations, cv=StratifiedKFold(
+    #                                        n_splits=4, shuffle=True, random_state=42),
+    #                                    random_state=search_seed, verbose=2, n_jobs=4, scoring='f1_macro')
+
+    # start = time()
+    # random_search.fit(X_train_scaled, y_train)
+    # print("RandomizedSearchCV took %.2f seconds for %d candidates"
+    #       " parameter settings." % ((time() - start), iterations))
+    # report(random_search.cv_results_)
+
+    # sgd_clf = SGDClassifier(**random_search.best_params_, n_jobs=4, verbose=10)
+
+    sgd_clf = SGDClassifier(n_jobs=4, penalty='l2', loss='log', alpha=0.015,
+                            l1_ratio=0.25, class_weight='balanced', average=True,
+                            fit_intercept=True, max_iter=10, verbose=10, random_state=42)
+    sgd_clf.fit(X_train_scaled, y_train)
+    y_pred = sgd_clf.predict(X_test_scaled)
     accuracy_fn.by_frames(y_pred)
     accuracy_fn.by_clips(y_pred)
 
@@ -83,7 +129,7 @@ def classification(X_train, X_test, y_train, y_test, accuracy_fn, pca_dim):
 if __name__ == "__main__":
     experiment_name = 'ORB_not_sep_rad5_pdist'
     max_num_clips = 0  # загружайте только часть данных для отладки кода
-    use_dump = False  # используйте dump для быстрой загрузки рассчитанных фич из файла
+    use_dump = True  # используйте dump для быстрой загрузки рассчитанных фич из файла
 
     # dataset dir
     base_dir = 'C:/Files/Datasets/SummerSchool STC'
@@ -105,9 +151,9 @@ if __name__ == "__main__":
     if not use_dump:
         # load dataset
         train_data = get_data(train_dataset_root,
-                              train_file_list, max_num_clips=0)
+                              train_file_list, max_num_clips=max_num_clips)
         test_data = get_data(
-            test_dataset_root, test_file_list, max_num_clips=0)
+            test_dataset_root, test_file_list, max_num_clips=max_num_clips)
 
         # get features
         train_feat, train_targets = calc_features(train_data)
@@ -115,8 +161,9 @@ if __name__ == "__main__":
 
         accuracy_fn = Accuracy(test_data, experiment_name=experiment_name)
 
-        # with open(experiment_name + '.pickle', 'wb') as f:
-        #    pickle.dump([train_feat, train_targets, test_feat, test_targets, accuracy_fn], f, protocol=2)
+        with open(experiment_name + '.pickle', 'wb') as f:
+            pickle.dump([train_feat, train_targets, test_feat,
+                         test_targets, accuracy_fn], f, protocol=2)
     else:
         with open(experiment_name + '.pickle', 'rb') as f:
             train_feat, train_targets, test_feat, test_targets, accuracy_fn = pickle.load(
