@@ -84,23 +84,22 @@ def classification(X_train, X_test, y_train, y_test, accuracy_fn, pca_dim):
         # TODO: выполните сокращение размерности признаков с использованием PCA
 
     # shuffle
-    combined = list(zip(X_train, y_train))
-    random.shuffle(combined)
-    X_train[:], y_train[:] = zip(*combined)
+    # combined = list(zip(X_train, y_train))
+    # random.shuffle(combined)
+    # X_train[:], y_train[:] = zip(*combined)
 
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    # # TODO: используйте классификаторы из sklearn
-    # sgd_clf = SGDClassifier(random_state=42, max_iter=5, loss='log', n_jobs=4)
-    # iterations = 1
-    # param_dist = {"penalty": ['l1', 'l2'],
-    #               "alpha": np.arange(0.0001, 0.01, (0.01 - 0.0001) / 50),
-    #               "l1_ratio": np.arange(0.05, 0.3, (0.3 - 0.05) / 10),
+    # TODO: используйте классификаторы из sklearn
+    # sgd_clf = SGDClassifier(random_state=42, max_iter=5, loss='log')
+    # iterations = 20
+    # param_dist = {"penalty": ['l2'],
+    #               "alpha": np.arange(0.01, 0.03, (0.03 - 0.01) / 100),
+    #               "l1_ratio": np.arange(0.15, 0.3, (0.3 - 0.15) / 10),
     #               "class_weight": [None, 'balanced'],
-    #               "average": [False, True],
-    #               "fit_intercept": [False, True]
+    #               "average": [True],
     #               }
 
     # search_seed = 42
@@ -114,12 +113,34 @@ def classification(X_train, X_test, y_train, y_test, accuracy_fn, pca_dim):
     # print("RandomizedSearchCV took %.2f seconds for %d candidates"
     #       " parameter settings." % ((time() - start), iterations))
     # report(random_search.cv_results_)
+    # params = random_search.best_params_
 
-    # sgd_clf = SGDClassifier(**random_search.best_params_, n_jobs=4, verbose=10)
+    ###### REPORT from RandomizedSearchCV ######
+    # Model with rank: 1
+    # Mean validation score: 0.79870922 (std: 0.00336902)
+    # Parameters: {'penalty': 'l2', 'l1_ratio': 0.2549999999999999,
+    #             'class_weight': None, 'average': True, 'alpha': 0.010800000000000002}
 
-    sgd_clf = SGDClassifier(n_jobs=4, penalty='l2', loss='log', alpha=0.015,
-                            l1_ratio=0.25, class_weight='balanced', average=True,
-                            fit_intercept=True, max_iter=10, verbose=10, random_state=42)
+    # Model with rank: 2
+    # Mean validation score: 0.79861163 (std: 0.00387216)
+    # Parameters: {'penalty': 'l2', 'l1_ratio': 0.15, 'class_weight': 'balanced',
+    #             'average': True, 'alpha': 0.011200000000000003}
+
+    # Model with rank: 3
+    # Mean validation score: 0.79823906 (std: 0.00367094)
+    # Parameters: {'penalty': 'l2', 'l1_ratio': 0.16499999999999998,
+    #             'class_weight': None, 'average': True, 'alpha': 0.011200000000000003}
+
+    params = {'penalty': 'l2', 'l1_ratio': 0.2549999999999999,
+              'class_weight': None, 'average': True, 'alpha': 0.010800000000000002
+              }
+    sgd_clf = SGDClassifier(**params, random_state=42,
+                            max_iter=5, loss='log', n_jobs=4, verbose=10)
+
+    # sgd_clf = SGDClassifier(n_jobs=4, penalty='l2', loss='log', alpha=0.019,
+    #                         l1_ratio=0.25, class_weight=None, average=True,
+    #                         fit_intercept=True, max_iter=5, verbose=10, random_state=42)
+
     sgd_clf.fit(X_train_scaled, y_train)
     y_pred = sgd_clf.predict(X_test_scaled)
     accuracy_fn.by_frames(y_pred)

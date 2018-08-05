@@ -2,6 +2,7 @@
 import sys
 import os
 
+sys.path.append('../')
 sys.path.append(os.getcwd())
 from pytorch.common.datasets_parsers.av_parser import AVDBParser
 
