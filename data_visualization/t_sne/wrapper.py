@@ -28,7 +28,7 @@ class Wrapper():
         if cuda:
             self.model.cuda()
         # TODO: добавьте оптимизатор
-        self.optimizer = optim.Adam()
+        self.optimizer = optim.Adam(model.parameters(), lr=0.01)
 
     def fit(self, *args):
         self.model.train()
@@ -45,6 +45,11 @@ class Wrapper():
                     # datas = [pij, i, j]
                     # pij - значения сходства между точками данных
                     # i, j - индексы точек
+                    self.optimizer.zero_grad()
+                    loss = self.model(*datas)
+                    loss.backward()
+                    self.optimizer.step()
+                    total += loss
 
             msg = 'Train Epoch: {} \tLoss: {:.6e}'
             msg = msg.format(epoch, total / (len(args[0]) * 1.0))

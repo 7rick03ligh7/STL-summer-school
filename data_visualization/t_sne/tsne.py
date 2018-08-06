@@ -14,9 +14,22 @@ class TSNE(nn.Module):
 
     def forward(self, pij, i, j):
         # TODO: реализуйте вычисление матрицы сходства для точек отображения и расстояние Кульбака-Лейблера
+
         # pij - значения сходства между точками данных
         # i, j - индексы точек
-        loss_kld = None
+        x = self.logits.weight
+
+        A = x[i.long()]
+        B = x[j.long()]
+        num = (1. + (A - B).pow(2).sum(1)).pow(-1.0)
+
+        MA = x.expand(self.n_points, self.n_points, self.n_dim)
+        MB = MA.t()
+        denom = (1. + (MA - MB).pow(2).sum(2)).pow(-1.0).view(-1).sum()
+        denom -= pij.shape[0]
+
+        qij = num / denom
+        loss_kld = (pij * (torch.log(pij) - torch.log(qij))).sum()
         return loss_kld.sum()
 
     def __call__(self, *args):
