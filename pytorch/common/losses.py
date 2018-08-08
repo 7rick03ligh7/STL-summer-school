@@ -21,6 +21,7 @@ class TotalLoss(nn.Module):
         if 'MSE' in self.loss_types:
             total_loss += self.loss_param['MSE']['w'] * nn.MSELoss()(logits, targets)
 
+
         # TODO: реализуйте objective function из статьи https://arxiv.org/pdf/1704.08619.pdf
 
         return total_loss

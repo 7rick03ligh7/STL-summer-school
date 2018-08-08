@@ -3,6 +3,7 @@ from tqdm import tqdm
 import cv2
 import codecs
 import numpy as np
+from sys import platform
 
 # local
 from pytorch.common.abstract.abstract_dataset_parser import AbstractDatasetParser
@@ -26,7 +27,8 @@ class AVDBParser(AbstractDatasetParser):
         self.load_image = load_image
         self.normalize = normalize
 
-        self.dataset_size = sum(1 for line in codecs.open(self.file_list, 'r', encoding='utf8'))
+        self.dataset_size = sum(1 for line in codecs.open(
+            self.file_list, 'r', encoding='utf8'))
         self.train_label_names = 'file_name cls_id'
 
         # reserve memory for data
@@ -66,8 +68,15 @@ class AVDBParser(AbstractDatasetParser):
             label_per_clip = []
             valence_per_clip = []
             arousal_per_clip = []
+            if platform.find('linux') >= 0:
+                is_linux = True
+            if platform.find('win') >= 0:
+                is_linux = False
+            else:
+                raise Exception("Unexpected operation system")
             for i in progresser:
-                datas = markup_file.readline().strip().split()
+                if is_linux:
+                    datas = markup_file.readline().replace('\\', '/').strip().split()
                 im_path = os.path.join(self.dataset_root, datas[0])
                 wav_path = None
                 valence = float(datas[1])
@@ -79,16 +88,22 @@ class AVDBParser(AbstractDatasetParser):
                     if 'Ryerson' in im_path:
                         if label == 1:
                             continue
-                        text_labels = ['neutral', 'calm', 'happy', 'sad', 'angry', 'fearful', 'disgust', 'surprised'][label-1]
-                        wav_path = os.path.dirname(im_path.replace('Video', 'Audio')).replace('.mp4', '.wav').replace('\\01', '\\03')
+                        text_labels = ['neutral', 'calm', 'happy', 'sad',
+                                       'angry', 'fearful', 'disgust', 'surprised'][label - 1]
+                        wav_path = os.path.dirname(im_path.replace('Video', 'Audio')).replace(
+                            '.mp4', '.wav').replace('/01', '/03')
                     elif 'OMGEmotionChallenge' in im_path:
-                        wav_path = os.path.dirname(im_path.replace('frames', 'wave')) + '.wav'
-                        text_labels = ['anger', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise'][label]
-                    landmarks = [[float(datas[2*k+4]), float(datas[2*k+5])] for k in range(68)]
+                        wav_path = os.path.dirname(
+                            im_path.replace('frames', 'wave')) + '.wav'
+                        text_labels = ['anger', 'disgust', 'fear',
+                                       'happy', 'neutral', 'sad', 'surprise'][label]
+                    landmarks = [
+                        [float(datas[2 * k + 4]), float(datas[2 * k + 5])] for k in range(68)]
                     idx = os.path.dirname(datas[0])
                 else:
                     label = int((valence + 10) * (arousal + 10))
-                    landmarks = [[float(datas[2*k+3]), float(datas[2*k+4])] for k in range(68)]
+                    landmarks = [
+                        [float(datas[2 * k + 3]), float(datas[2 * k + 4])] for k in range(68)]
                     idx = os.path.dirname(datas[0])
 
                 class_num = max(class_num, int(label))
@@ -149,14 +164,18 @@ class AVDBParser(AbstractDatasetParser):
 
             if self.normalize:
                 if self.ungroup:
-                    max_valence = max([abs(sample.valence) for sample in self.data])
-                    max_arousal = max([abs(sample.arousal) for sample in self.data])
+                    max_valence = max([abs(sample.valence)
+                                       for sample in self.data])
+                    max_arousal = max([abs(sample.arousal)
+                                       for sample in self.data])
                     for sample in self.data:
                         sample.valence /= max_valence
                         sample.arousal /= max_arousal
                 else:
-                    max_valence = max([abs(sample.valence) for clip in self.data for sample in clip.data_samples])
-                    max_arousal = max([abs(sample.arousal) for clip in self.data for sample in clip.data_samples])
+                    max_valence = max(
+                        [abs(sample.valence) for clip in self.data for sample in clip.data_samples])
+                    max_arousal = max(
+                        [abs(sample.arousal) for clip in self.data for sample in clip.data_samples])
                     for clip in self.data:
                         clip.valence /= max_valence
                         clip.arousal /= max_arousal

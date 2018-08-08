@@ -1,14 +1,18 @@
 dataset:
   train:
     local:
-      data_root: D:\AVER\OMGEmotionChallenge-master\omg_TrainVideos\preproc/frames #D:\AVER\AFEW-VA\crop
-      file_list: D:\AVER\OMGEmotionChallenge-master\omg_TrainVideos\preproc/train_data_with_landmarks.txt
+      data_root: /media/stc_ml_school/data/OMGEmotionChallenge/omg_TrainVideos/frames
+      file_list: /media/stc_ml_school/data/OMGEmotionChallenge/omg_TrainVideos/train_data_with_landmarks.txt
     server:
+      data_root: /media/stc_ml_school/data/OMGEmotionChallenge/omg_TrainVideos/frames
+      file_list: /media/stc_ml_school/data/OMGEmotionChallenge/omg_TrainVideos/train_data_with_landmarks.txt
   valid:
     local:
-      data_root: D:\AVER\OMGEmotionChallenge-master\omg_ValidVideos\preproc/frames #D:\AVER\AFEW-VA\crop
-      file_list: D:\AVER\OMGEmotionChallenge-master\omg_ValidVideos\preproc/valid_data_with_landmarks.txt #D:\AVER\AFEW-VA\crop/test_data_with_landmarks.txt
+      data_root: /media/stc_ml_school/data/OMGEmotionChallenge/omg_ValidVideos/frames
+      file_list: /media/stc_ml_school/data/OMGEmotionChallenge/omg_ValidVideos/valid_data_with_landmarks.txt
     server:
+      data_root: /media/stc_ml_school/data/OMGEmotionChallenge/omg_ValidVideos/frames
+      file_list: /media/stc_ml_school/data/OMGEmotionChallenge/omg_ValidVideos/valid_data_with_landmarks.txt
 
 seed: 1234
 
@@ -19,7 +23,7 @@ net:
   fine_tune: no
 
 parser:
-  max_num_clips: 0
+  max_num_clips: 20
   max_num_samples: 0
 
 preproc:
@@ -59,7 +63,7 @@ batch_proc:
   use_async: yes
 
 opt:
-  type: SGD
+  type: Adam
   lr: 0.009 #initial learning rate
   momentum: 0.2
   weight_decay: 5.e-4 #initial weight decay
@@ -72,7 +76,7 @@ lr_scheduler:
   scale_lr_fc: [1., 1]
 
 train:
-  cuda_device: 0 #cuda device id
+  cuda_device: 1 #cuda device id
   step_size: 100 #lr scheduler step size
   step_print: 100
   epoch_size: 50000 #epoch size
@@ -92,13 +96,13 @@ ini_net:
 logging:
   log_dir:
     local:  D:/aver_log
-    server: /media/data/kalinovskiy/face_recognition_merge/logs
+    server: /media/stc_ml_school/logs
   tb_log_dir:
     local:  D:/aver_log
-    server: /media/data/kalinovskiy/face_recognition_merge/logs
+    server: /media/stc_ml_school/logs
   snapshot_dir:
     local: D:/aver_log
-    server: /media/data/kalinovskiy/face_recognition_merge/logs
+    server: /media/stc_ml_school/logs
 
 test:
   dataset:
@@ -109,5 +113,5 @@ test:
       local: D:\AVER\AFEW-VA\crop/test_data_with_landmarks.txt
       server: /media/data/kalinovskiy/train_file_list_85k.txt
 
-  cuda_device: 0
+  cuda_device: 1
   file_model: D:\aver_log\EmoV2_step40/EmoV2_step40_iter_25000.model

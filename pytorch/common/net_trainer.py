@@ -34,6 +34,7 @@ class NetTrainer:
         self.net_output = None
         self.target = None
         self.current_iter = 0
+        self.device = torch.device('cuda:' + str(cuda_id) if torch.cuda.is_available() else 'cpu')
 
     def train(self, model, optimizer, scheduler, train_data_batcher, val_data_batcher, val_iter, batch_processor,
               loss_function, max_iter, step_size, snapshot_iter,
@@ -83,7 +84,7 @@ class NetTrainer:
                             'batch_processor': batch_processor,
                             'loss_function': loss_function},
                            save_path)
-                model.cuda(self.cuda_id)
+                model.to(self.device)
 
             current_lr = scheduler.get_lr()
             self.train_summary.add_scalar('learning_rate', current_lr[0], global_step=self.current_iter)
@@ -94,6 +95,8 @@ class NetTrainer:
             optimizer.zero_grad()
 
             logits = model(data)
+            # print(len(logits))
+            # print(len(target))
             loss = loss_function(logits, target)
 
             loss.backward()

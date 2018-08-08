@@ -16,6 +16,7 @@ class SimpleBatchProcessor(AbstractBatchProcessor):
         self.cuda_id = cuda_id
         self.use_pin_memory = use_pin_memory
         self.use_async = use_async
+        self.device = torch.device('cuda:' + str(cuda_id) if torch.cuda.is_available() else 'cpu')
 
     def pre_processing(self, batch):
         """
@@ -28,8 +29,9 @@ class SimpleBatchProcessor(AbstractBatchProcessor):
         target = torchBatch.labels
 
         if self.cuda_id != -1:
-            data, target = data.cuda(self.cuda_id, async=self.use_async),   \
-                                     target.cuda(self.cuda_id, async=self.use_async)
+            # data, target = data.cuda(self.cuda_id, async=self.use_async),   \
+            #                          target.cuda(self.cuda_id, async=self.use_async)
+            data, target = data.to(self.device), target.to(self.device)
         data, target = Variable(data), Variable(target)
 
         return data, target
@@ -50,6 +52,7 @@ class BatchProcessor4D(AbstractBatchProcessor):
         self.cuda_id = cuda_id
         self.use_pin_memory = use_pin_memory
         self.use_async = use_async
+        self.device = torch.device('cuda:' + str(cuda_id) if torch.cuda.is_available() else 'cpu')
 
     def pre_processing(self, batch):
         """
@@ -72,8 +75,9 @@ class BatchProcessor4D(AbstractBatchProcessor):
         target = torchBatch.labels
 
         if self.cuda_id != -1:
-            data, target = data.cuda(self.cuda_id, async=self.use_async),   \
-                                     target.cuda(self.cuda_id, async=self.use_async)
+            # data, target = data.cuda(self.cuda_id, async=self.use_async),   \
+            #                          target.cuda(self.cuda_id, async=self.use_async)
+            data, target = data.to(self.device), target.to(self.device)
         data, target = Variable(data), Variable(target)
 
         return data, target

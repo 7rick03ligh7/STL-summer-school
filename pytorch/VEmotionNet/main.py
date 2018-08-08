@@ -151,12 +151,15 @@ def train():
                                        use_async=params['batch_proc']['use_async'])
 
     net_type = params['net']['type']
-    if net_type == 'ResNet':
-        net = CNNNet(softmax_size, depth=params['net']['depth'], data_size=params['preproc']['data_frame'],
-                                    pretrain_weight='resnet-34-kinetics.pth')
-    else:
-        print('Type net is not supported!')
-        exit(0)
+
+    # if net_type == 'ResNet':
+    #     net = CNNNet(softmax_size, depth=params['net']['depth'], data_size=params['preproc']['data_frame'],
+    #                                 pretrain_weight='resnet-34-kinetics.pth')
+    # else:
+    #     print('Type net is not supported!')
+    #     exit(0)
+
+    net = CNNNet(softmax_size, depth=params['net']['depth'], data_size=params['preproc']['data_frame'])
 
     loss = TotalLoss(params['losses'], 1, params['train']['cuda_device'])
 
