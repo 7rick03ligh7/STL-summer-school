@@ -76,7 +76,9 @@ class AVDBParser(AbstractDatasetParser):
                 raise Exception("Unexpected operation system")
             for i in progresser:
                 if is_linux:
-                    datas = markup_file.readline().replace('\\', '/').strip().split()
+                    datas = markup_file.readline().replace('\\', ' / ').strip().split()
+                else:
+                    datas = markup_file.readline().strip().split()
                 im_path = os.path.join(self.dataset_root, datas[0])
                 wav_path = None
                 valence = float(datas[1])
